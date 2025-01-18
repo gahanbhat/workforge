@@ -11,7 +11,7 @@ function App() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLoading(true)
+      setLoading(false)
     }, 2000) // 2 seconds
     console.log('App loaded')
     return () => clearTimeout(timer)

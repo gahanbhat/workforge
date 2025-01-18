@@ -28,14 +28,6 @@ code {
   font-size: 85%;
 }
 
-#root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  margin-bottom: 80px;
-}
-
 .logo {
   margin-bottom: 20px;
   -webkit-user-drag: none;

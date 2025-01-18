@@ -1,10 +1,17 @@
-import { Menu, dialog, app } from 'electron'
-import fs from 'fs'
-import path from 'path'
+import { Menu } from 'electron'
+import { openProject, newProject, aboutApp } from '../utils/menu-functions'
 
 class MenuBuilder {
-  constructor(mainWindow) {
+  constructor({ mainWindow, setMenuVisibilityAlways = true }) {
     this.mainWindow = mainWindow
+    if (setMenuVisibilityAlways) {
+      this.menuVisibleAlways()
+    }
+  }
+
+  menuVisibleAlways() {
+    this.mainWindow.setAutoHideMenuBar(false)
+    this.mainWindow.setMenuBarVisibility(true)
   }
 
   buildMenu() {
@@ -43,69 +50,12 @@ class MenuBuilder {
           {
             label: '&Open Project',
             accelerator: 'Ctrl+O',
-            click: () => {
-              dialog
-                .showOpenDialog({
-                  properties: ['openDirectory']
-                })
-                .then((result) => {
-                  if (!result.canceled) {
-                    const projectPath = result.filePaths[0]
-                    const dataFilePath = path.join(projectPath, 'data.json')
-                    if (!fs.existsSync(dataFilePath)) {
-                      dialog.showMessageBox({
-                        type: 'warning',
-                        title: 'Project Error',
-                        message: 'This is not a valid project folder. data.json does not exist.',
-                        buttons: ['OK']
-                      })
-                    } else {
-                      // Update settings.json with the current project path
-                      const settingsPath = path.join(app.getPath('userData'), 'settings.json')
-                      const settings = JSON.parse(fs.readFileSync(settingsPath))
-                      settings.currentProject = projectPath
-                      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2))
-                    }
-                  }
-                })
-                .catch((err) => {
-                  console.log(err)
-                })
-            }
+            click: () => openProject()
           },
           {
             label: '&New Project',
             accelerator: 'Ctrl+N',
-            click: () => {
-              dialog
-                .showOpenDialog({
-                  properties: ['openDirectory']
-                })
-                .then((result) => {
-                  if (!result.canceled) {
-                    const projectPath = result.filePaths[0]
-                    const dataFilePath = path.join(projectPath, 'data.json')
-                    if (!fs.existsSync(dataFilePath)) {
-                      fs.writeFileSync(dataFilePath, '{}')
-                      // Update settings.json with the current project path
-                      const settingsPath = path.join(app.getPath('userData'), 'settings.json')
-                      const settings = JSON.parse(fs.readFileSync(settingsPath))
-                      settings.currentProject = projectPath
-                      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2))
-                    } else {
-                      dialog.showMessageBox({
-                        type: 'warning',
-                        title: 'Project Error',
-                        message: 'This folder already has a project.',
-                        buttons: ['OK']
-                      })
-                    }
-                  }
-                })
-                .catch((err) => {
-                  console.log(err)
-                })
-            }
+            click: () => newProject()
           },
           {
             label: '&Close',
@@ -158,14 +108,7 @@ class MenuBuilder {
         submenu: [
           {
             label: 'About App',
-            click: () => {
-              dialog.showMessageBox({
-                type: 'info',
-                title: 'About App',
-                message: 'This is an example app built with Electron.',
-                buttons: ['OK']
-              })
-            }
+            click: () => aboutApp()
           }
         ]
       }

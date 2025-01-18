@@ -2,10 +2,9 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import fs from 'fs'
-import path from 'path'
 
 import { MenuBuilder } from './menuMaker'
+import FileService from '../services/file-service'
 
 function createWindow() {
   // Create the browser window.
@@ -30,17 +29,10 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  // Check if the file exists, if not create it
-  const filePath = path.join(app.getPath('userData'), 'settings.json')
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, '{}')
-  }
+  FileService.ensureSettingsFile()
 
-  const menuBuilder = new MenuBuilder(mainWindow)
+  const menuBuilder = new MenuBuilder({ mainWindow: mainWindow, setMenuVisibilityAlways: true })
   menuBuilder.buildMenu()
-
-  mainWindow.setAutoHideMenuBar(false)
-  mainWindow.setMenuBarVisibility(true)
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

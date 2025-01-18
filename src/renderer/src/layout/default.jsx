@@ -1,7 +1,16 @@
 import PropTypes from 'prop-types'
+import { MainLogo } from '../components/Icons'
 
 const HomeLayout = ({ children }) => {
-  return <div>{children}</div>
+  return (
+    <section>
+      <div className="w-full bg-white">
+        <MainLogo className="p-2 w-60" />
+      </div>
+
+      {children}
+    </section>
+  )
 }
 
 HomeLayout.propTypes = {
