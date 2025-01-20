@@ -2,16 +2,16 @@ import PropTypes from 'prop-types'
 
 const Tabs = ({ tabList, activeTab, setActiveTab }) => {
   return (
-    <section className="w-full border-b bg-gray-900">
-      <nav className="flex px-1">
+    <section className="w-full border-b">
+      <nav className="flex p-2 gap-2">
         {tabList.map((tab, index) => (
           <button
             key={index}
             onClick={() => setActiveTab((prev) => (prev === tab.name ? prev : tab.name))}
-            className={`px-4 py-2 duration-300 ${
+            className={`px-4 py-1 duration-300 rounded ${
               activeTab === tab.name
                 ? 'bg-[#800000] text-white'
-                : 'bg-gray-900 text-gray-300 hover:bg-[#800000] hover:text-white'
+                : 'text-gray-300 hover:bg-[#800000] hover:text-white'
             }`}
           >
             {tab.name}
@@ -25,7 +25,7 @@ const Tabs = ({ tabList, activeTab, setActiveTab }) => {
 Tabs.propTypes = {
   activeTab: PropTypes.string.isRequired,
   setActiveTab: PropTypes.func.isRequired,
-  tabList: PropTypes.arrayOf(PropTypes.string).isRequired
+  tabList: PropTypes.arrayOf(PropTypes.object).isRequired
 }
 
 export default Tabs
