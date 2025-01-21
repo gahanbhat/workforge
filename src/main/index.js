@@ -1,82 +1,62 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
-
-import { MenuBuilder } from './menuMaker'
-import FileService from '../services/file-service'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import path from 'path'
+import fs from 'fs'
+import { promises as fsPromises } from 'fs'
 
 function createWindow() {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      preload: path.join(__dirname, '..', 'preload', 'index.js'), // Link to preload script
+      nodeIntegration: false, // Disable nodeIntegration for security
+      contextIsolation: true // Enable context isolation for security
     }
   })
+
+  mainWindow.loadFile('index.html')
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  FileService.ensureSettingsFile()
-
-  const menuBuilder = new MenuBuilder({ mainWindow: mainWindow, setMenuVisibilityAlways: true })
-  menuBuilder.buildMenu()
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+ipcMain.on('save-timesheet', async (event, data) => {
+  const filePath = path.join(app.getPath('userData'), 'timesheets.csv')
+  const csvData = [
+    'Date,Term,Week,Name,In Time,Out Time,Break',
+    `${data.date},${data.term},${data.week},${data.name},${data.inTime},${data.outTime},${data.break}`
+  ].join('\n')
+
+  try {
+    await fsPromises.access(filePath)
+    await fsPromises.appendFile(filePath, csvData + '\n')
+    event.reply('timesheet-saved', 'Data saved successfully')
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      await fsPromises.writeFile(filePath, csvData + '\n')
+      event.reply('timesheet-saved', 'File created and data saved')
+    } else {
+      console.error('Error saving timesheet data:', err)
+      event.reply('timesheet-saved', 'Error saving data')
+    }
+  }
+})
+
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
